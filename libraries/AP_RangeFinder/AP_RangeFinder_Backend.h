@@ -58,6 +58,7 @@ public:
     virtual float max_distance() const { return params.max_distance; }
     virtual float min_distance() const { return params.min_distance; }
     float ground_clearance() const { return params.ground_clearance; }
+    int8_t lw20_distance_mode() const{ return params.lw20_distance_mode;}
     MAV_DISTANCE_SENSOR get_mav_distance_sensor_type() const;
     RangeFinder::Status status() const;
     RangeFinder::Type type() const { return (RangeFinder::Type)params.type.get(); }

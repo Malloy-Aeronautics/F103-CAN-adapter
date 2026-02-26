@@ -63,7 +63,7 @@ const AP_Param::GroupInfo AP_RangeFinder_Params::var_info[] = {
     // @Values: 46:BenewakeTFS20L
     // @Values: 100:SITL
     // @User: Standard
-    AP_GROUPINFO_FLAGS("TYPE", 1, AP_RangeFinder_Params, type, 0, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("TYPE", 1, AP_RangeFinder_Params, type, 8, AP_PARAM_FLAG_ENABLE),
 
     // @Param: PIN
     // @DisplayName: Rangefinder pin
@@ -185,6 +185,13 @@ const AP_Param::GroupInfo AP_RangeFinder_Params::var_info[] = {
     // @Values: 0:Forward, 1:Forward-Right, 2:Right, 3:Back-Right, 4:Back, 5:Back-Left, 6:Left, 7:Forward-Left, 24:Up, 25:Down
     // @User: Advanced
     AP_GROUPINFO("ORIENT", 53, AP_RangeFinder_Params, orientation, AP_RANGEFINDER_DEFAULT_ORIENTATION),
+
+    // @Param: LW20MODE
+    // @DisplayName: LW20 Lidar Mode 
+    // @Description: LW20 get the First return, Last return or Auto mode where if (value > Ground Clearance)? First Return : Last Return 
+    // @Values: 0:Auto, 1:LPF, 2:LDL
+    // @User: Advanced
+    AP_GROUPINFO("LW20MODE", 56, AP_RangeFinder_Params, lw20_distance_mode, 0),
 
     AP_GROUPEND
 };
