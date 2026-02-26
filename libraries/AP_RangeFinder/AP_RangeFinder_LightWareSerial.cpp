@@ -32,9 +32,16 @@ bool AP_RangeFinder_LightWareSerial::get_reading(float &reading_m)
         return false;
     }
 
-    float sum = 0;              // sum of all readings taken
+    float sum_auto = 0;           // sum of integrated mode if (VAL > ground clearance) ? ldf : ldl
+    float sum_ldf = 0;          // sum of ldf readings taken
+    float sum_ldl = 0;          // sum of ldl readings taken
     uint16_t valid_count = 0;   // number of valid readings
+    uint16_t valid_count_ldf = 0; // number of valid ldf readings
+    uint16_t valid_count_ldl = 0; // number of valid ldl readings
     uint16_t invalid_count = 0; // number of invalid readings
+    float ldf_reading_m = 0;
+    float ldl_reading_m = 0;
+    float auto_reading_m = 0;
 
     // max distance the sensor can reliably measure - read from parameters
     const auto distance_cm_max = max_distance()*100;
