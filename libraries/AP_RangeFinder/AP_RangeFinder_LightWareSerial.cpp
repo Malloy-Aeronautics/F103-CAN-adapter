@@ -44,7 +44,8 @@ bool AP_RangeFinder_LightWareSerial::get_reading(float &reading_m)
     float auto_reading_m = 0;
 
     // max distance the sensor can reliably measure - read from parameters
-    const auto distance_cm_max = max_distance()*100;
+    const int16_t distance_cm_max = max_distance()*100; // convert meters to centimeters
+    const int16_t distance_lpf_min_cm = ground_clearance()*100; // convert meters to centimeters
 
     // read any available lines from the lidar
     for (auto i=0; i<8192; i++) {
@@ -123,7 +124,9 @@ bool AP_RangeFinder_LightWareSerial::get_reading(float &reading_m)
         uart->write("www\r\n");
         last_init_ms = now;
     } else {
-        uart->write('d');
+        // Sending LDL before LDF is required
+        uart->write("?LDL,2\r\n");
+        uart->write("?LDF,1\r\n");
     }
 
     // return average of all valid readings
