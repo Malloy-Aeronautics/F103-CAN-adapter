@@ -63,7 +63,7 @@ const AP_Param::GroupInfo AP_RangeFinder_Params::var_info[] = {
     // @Values: 46:BenewakeTFS20L
     // @Values: 100:SITL
     // @User: Standard
-    AP_GROUPINFO_FLAGS("TYPE", 1, AP_RangeFinder_Params, type, 0, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("TYPE", 1, AP_RangeFinder_Params, type, 8, AP_PARAM_FLAG_ENABLE),
 
     // @Param: PIN
     // @DisplayName: Rangefinder pin
