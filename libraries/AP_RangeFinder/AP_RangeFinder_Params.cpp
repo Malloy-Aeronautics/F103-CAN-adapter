@@ -186,6 +186,13 @@ const AP_Param::GroupInfo AP_RangeFinder_Params::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("ORIENT", 53, AP_RangeFinder_Params, orientation, AP_RANGEFINDER_DEFAULT_ORIENTATION),
 
+    // @Param: LW20MODE
+    // @DisplayName: LW20 Lidar Mode 
+    // @Description: LW20 get the First return, Last return or Auto mode where if (value > Ground Clearance)? First Return : Last Return 
+    // @Values: 0:Auto, 1:LPF, 2:LDL
+    // @User: Advanced
+    AP_GROUPINFO("LW20MODE", 56, AP_RangeFinder_Params, lw20_distance_mode, 0),
+
     AP_GROUPEND
 };
 
