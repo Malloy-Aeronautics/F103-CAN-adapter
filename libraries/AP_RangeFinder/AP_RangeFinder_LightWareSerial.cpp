@@ -48,19 +48,41 @@ bool AP_RangeFinder_LightWareSerial::get_reading(float &reading_m)
     const int16_t distance_lpf_min_cm = ground_clearance()*100; // convert meters to centimeters
 
     // read any available lines from the lidar
-    for (auto i=0; i<8192; i++) {
-        uint8_t c;
-        if (!uart->read(c)) {
-            break;
-        }
+    int16_t nbytes = uart->available();
+    while (nbytes-- > 0) {
+        char c = uart->read();
+
         // use legacy protocol
         if (protocol_state == ProtocolState::UNKNOWN || protocol_state == ProtocolState::LEGACY) {
             if (c == '\r') {
                 linebuf[linebuf_len] = 0;
-                const float dist = strtof(linebuf, nullptr);
-                if (!is_negative(dist) && !is_lost_signal_distance(dist * 100, distance_cm_max)) {
-                    sum += dist;
-                    valid_count++;
+                float dist = 0;
+                int8_t lidar_reply_type = get_distance_from_lidar_reply(linebuf, dist);
+                if (lidar_reply_type == 0) {
+                    // invalid reading
+                    invalid_count++;
+                    // reset the buffer length and clear the buffer
+                    linebuf_len = 0;
+                    memset(linebuf, 0, sizeof(linebuf));
+                    continue;
+                }
+                else if (!is_negative(dist) && !is_lost_signal_distance(dist * 100, distance_cm_max)) {
+                    if (lidar_reply_type == 1) { 
+                        sum_ldf += ldf_val_m; // summing LDF value
+                        valid_count_ldf++;
+                    } else if (lidar_reply_type == 2) {
+                        sum_ldl += ldl_val_m; // summing LDL value
+                        valid_count_ldl++;
+                    }
+                    // overall sum and count
+                    if (lidar_reply_type == 1  && ldf_val_m < (distance_lpf_min_cm*0.01f) && ldl_val_m > 0) {
+                        sum_auto += ldl_val_m; // use the stored ldl reading if available
+                        valid_count++;
+                    } else if(lidar_reply_type == 1) {
+                        sum_auto += dist;
+                        valid_count++;
+                    }
+
                     // if still determining protocol update legacy valid count
                     if (protocol_state == ProtocolState::UNKNOWN) {
                         legacy_valid_count++;
@@ -69,15 +91,16 @@ bool AP_RangeFinder_LightWareSerial::get_reading(float &reading_m)
                     invalid_count++;
                 }
                 linebuf_len = 0;
-            } else if (isdigit(c) || c == '.' || c == '-') {
+                memset(linebuf, 0, sizeof(linebuf));
+            }else if(isdigit(c) || c == '.' || c == '-' || c == 'l' || c == 'd' || c == 'f' || c == ',' || c == ':'){
                 linebuf[linebuf_len++] = c;
                 if (linebuf_len == sizeof(linebuf)) {
                     // too long, discard the line
                     linebuf_len = 0;
+                    memset(linebuf, 0, sizeof(linebuf));
                 }
             }
         }
-
         // use binary protocol
         if (protocol_state == ProtocolState::UNKNOWN || protocol_state == ProtocolState::BINARY) {
             bool msb_set = BIT_IS_SET(c, 7);
@@ -90,7 +113,7 @@ bool AP_RangeFinder_LightWareSerial::get_reading(float &reading_m)
                 if (high_byte_received) {
                     const int16_t dist = (high_byte & 0x7f) << 7 | (c & 0x7f);
                     if (dist >= 0 && !is_lost_signal_distance(dist, distance_cm_max)) {
-                        sum += dist * 0.01f;
+                        sum_auto += dist * 0.01f;
                         valid_count++;
                         // if still determining protocol update binary valid count
                         if (protocol_state == ProtocolState::UNKNOWN) {
@@ -131,14 +154,28 @@ bool AP_RangeFinder_LightWareSerial::get_reading(float &reading_m)
 
     // return average of all valid readings
     if (valid_count > 0) {
-        reading_m = sum / valid_count;
+        auto_reading_m = sum_auto / valid_count;
+        // log the data
+        if (valid_count_ldf > 0){
+            ldf_reading_m = sum_ldf / valid_count_ldf;
+        }
+        if (valid_count_ldl > 0){
+            ldl_reading_m = sum_ldl / valid_count_ldl;
+        }
+        // chose the reading based on LW20MODE param
+        if(lw20_distance_mode() == 1)
+            reading_m = ldf_reading_m;
+        else if (lw20_distance_mode() == 2)
+            reading_m = ldl_reading_m;
+        else
+            reading_m = auto_reading_m;
         no_signal = false;
         return true;
     }
 
     // all readings were invalid so return out-of-range-high value
     if (invalid_count > 0) {
-        reading_m = MAX(LIGHTWARE_DIST_MAX_CM, distance_cm_max + LIGHTWARE_OUT_OF_RANGE_ADD_CM);
+        reading_m = MIN(MAX(LIGHTWARE_DIST_MAX_CM, distance_cm_max + LIGHTWARE_OUT_OF_RANGE_ADD_CM), UINT16_MAX) * 0.01f;
         no_signal = true;
         return true;
     }
