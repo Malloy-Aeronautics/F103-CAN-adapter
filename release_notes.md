@@ -21,4 +21,4 @@ N/A
 ## History
 |  verssion    |    date      |  Comments              |
 |:----         |:------------:|:--                     |
-|  1.0.0       | July 2026    | Major FW release       |
+|  1.0.0       | 15 July 2026    | Major FW release       |
